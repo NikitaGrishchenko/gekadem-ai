@@ -1,0 +1,180 @@
+name: gekadem
+
+services:
+  vpn:
+    image: qmcgaw/gluetun:latest
+    restart: unless-stopped
+    cap_add:
+      - NET_ADMIN
+    devices:
+      - /dev/net/tun:/dev/net/tun
+    volumes:
+      - type: bind
+        source: ./wireguard/wg0.conf
+        target: /gluetun/wireguard/wg0.conf
+        read_only: true
+        bind:
+          create_host_path: false
+    environment:
+      VPN_SERVICE_PROVIDER: custom
+      VPN_TYPE: wireguard
+      FIREWALL_INPUT_PORTS: '3080,3000'
+      FIREWALL_OUTBOUND_SUBNETS: ${VPN_DOCKER_SUBNET:-172.30.50.0/24}
+    ports:
+      - '127.0.0.1:3080:3080'
+      - '127.0.0.1:3000:3000'
+
+  api:
+    image: ${GEKADEM_IMAGE:?Set GEKADEM_IMAGE in .env}
+    restart: unless-stopped
+    network_mode: service:vpn
+    env_file: .env
+    environment:
+      HOST: 0.0.0.0
+      PORT: '3080'
+      NODE_ENV: production
+      TRUST_PROXY: '1'
+      MONGO_URI: mongodb://mongodb:27017/LibreChat
+      MEILI_HOST: http://meilisearch:7700
+      RAG_API_URL: http://127.0.0.1:8000
+      LIBRECHAT_TEMP_CREDENTIALS_PATH: /app/data/.env.temp
+    volumes:
+      - ./librechat.yaml:/app/librechat.yaml:ro
+      - uploads:/app/uploads
+      - images:/app/client/public/images
+      - logs:/app/api/logs
+      - app-data:/app/data
+    depends_on:
+      vpn:
+        condition: service_healthy
+      mongodb:
+        condition: service_healthy
+      meilisearch:
+        condition: service_started
+      rag_api:
+        condition: service_started
+    healthcheck:
+      test:
+        [
+          'CMD',
+          'node',
+          '-e',
+          "fetch('http://127.0.0.1:3080/health').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))",
+        ]
+      interval: 15s
+      timeout: 5s
+      retries: 20
+      start_period: 60s
+
+  admin-panel:
+    image: registry.librechat.ai/librechat-ai/librechat-admin-panel:latest
+    restart: unless-stopped
+    network_mode: service:vpn
+    environment:
+      PORT: '3000'
+      SESSION_SECRET: ${ADMIN_PANEL_SESSION_SECRET:?Set ADMIN_PANEL_SESSION_SECRET in .env}
+      API_SERVER_URL: http://127.0.0.1:3080
+      VITE_API_BASE_URL: ${DOMAIN_CLIENT:?Set DOMAIN_CLIENT in .env}
+      SESSION_COOKIE_SECURE: 'true'
+    depends_on:
+      vpn:
+        condition: service_healthy
+      api:
+        condition: service_healthy
+
+  caddy:
+    image: caddy:2-alpine
+    restart: unless-stopped
+    environment:
+      APP_DOMAIN: ${APP_DOMAIN:?Set APP_DOMAIN in .env}
+      ADMIN_DOMAIN: ${ADMIN_DOMAIN:?Set ADMIN_DOMAIN in .env}
+    ports:
+      - '80:80'
+      - '443:443'
+      - '443:443/udp'
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy-data:/data
+      - caddy-config:/config
+    depends_on:
+      api:
+        condition: service_healthy
+      admin-panel:
+        condition: service_started
+
+  mongodb:
+    image: mongo:8.0.20
+    restart: unless-stopped
+    command: ['mongod', '--noauth', '--bind_ip_all']
+    volumes:
+      - mongodb-data:/data/db
+    healthcheck:
+      test: ['CMD', 'mongosh', '--quiet', '--eval', 'quit(db.adminCommand({ ping: 1 }).ok ? 0 : 1)']
+      interval: 5s
+      timeout: 5s
+      retries: 20
+      start_period: 15s
+
+  meilisearch:
+    image: getmeili/meilisearch:v1.35.1
+    restart: unless-stopped
+    environment:
+      MEILI_ENV: production
+      MEILI_HOST: http://0.0.0.0:7700
+      MEILI_NO_ANALYTICS: 'true'
+      MEILI_MASTER_KEY: ${MEILI_MASTER_KEY:?Set MEILI_MASTER_KEY in .env}
+    volumes:
+      - meili-data:/meili_data
+
+  vectordb:
+    image: pgvector/pgvector:0.8.0-pg15-trixie
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: mydatabase
+      POSTGRES_USER: myuser
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD in .env}
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U myuser -d mydatabase']
+      interval: 5s
+      timeout: 5s
+      retries: 20
+      start_period: 15s
+
+  rag_api:
+    image: registry.librechat.ai/librechat-ai/librechat-rag-api-dev-lite:latest
+    restart: unless-stopped
+    network_mode: service:vpn
+    env_file: .env
+    environment:
+      HOST: 0.0.0.0
+      PORT: '8000'
+      RAG_PORT: '8000'
+      DB_HOST: vectordb
+      DB_PORT: '5432'
+      POSTGRES_DB: mydatabase
+      POSTGRES_USER: myuser
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD in .env}
+    depends_on:
+      vpn:
+        condition: service_healthy
+      vectordb:
+        condition: service_healthy
+
+networks:
+  default:
+    ipam:
+      config:
+        - subnet: ${VPN_DOCKER_SUBNET:-172.30.50.0/24}
+
+volumes:
+  mongodb-data:
+  meili-data:
+  postgres-data:
+  uploads:
+  images:
+  logs:
+  app-data:
+  caddy-data:
+  caddy-config:
