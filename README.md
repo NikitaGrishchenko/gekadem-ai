@@ -1,264 +1,169 @@
-<p align="center">
-  <a href="https://librechat.ai">
-    <img src="client/public/assets/logo.svg" height="256">
-  </a>
-  <h1 align="center">
-    <a href="https://librechat.ai">LibreChat</a>
-  </h1>
-</p>
+# Gekadem AI
 
-<p align="center">
-  <strong>English</strong> ·
-  <a href="README.zh.md">中文</a>
-</p>
+Форк LibreChat с собственным интерфейсом. Ниже — запуск для локальной разработки на Windows через PowerShell.
 
-<p align="center">
-  <a href="https://discord.librechat.ai"> 
-    <img
-      src="https://img.shields.io/discord/1086345563026489514?label=&logo=discord&style=for-the-badge&logoWidth=20&logoColor=white&labelColor=000000&color=blueviolet">
-  </a>
-  <a href="https://www.youtube.com/@LibreChat"> 
-    <img
-      src="https://img.shields.io/badge/YOUTUBE-red.svg?style=for-the-badge&logo=youtube&logoColor=white&labelColor=000000&logoWidth=20">
-  </a>
-  <a href="https://docs.librechat.ai"> 
-    <img
-      src="https://img.shields.io/badge/DOCS-blue.svg?style=for-the-badge&logo=read-the-docs&logoColor=white&labelColor=000000&logoWidth=20">
-  </a>
-  <a aria-label="Sponsors" href="https://github.com/sponsors/danny-avila">
-    <img
-      src="https://img.shields.io/badge/SPONSORS-brightgreen.svg?style=for-the-badge&logo=github-sponsors&logoColor=white&labelColor=000000&logoWidth=20">
-  </a>
-</p>
+## Что нужно
 
-<p align="center">
-<a href="https://railway.com/deploy/librechat-official?referralCode=HI9hWz&utm_medium=integration&utm_source=readme&utm_campaign=librechat">
-  <img src="https://railway.com/button.svg" alt="Deploy on Railway" height="30">
-</a>
-<a href="https://zeabur.com/templates/0X2ZY8">
-  <img src="https://zeabur.com/button.svg" alt="Deploy on Zeabur" height="30"/>
-</a>
-<a href="https://template.cloud.sealos.io/deploy?templateName=librechat">
-  <img src="https://raw.githubusercontent.com/labring-actions/templates/main/Deploy-on-Sealos.svg" alt="Deploy on Sealos" height="30">
-</a>
-</p>
+- Node.js версии из [.nvmrc](.nvmrc) (сейчас `24.22.3`).
+- npm версии из `packageManager` в [package.json](package.json) (сейчас `11.13.0`).
+- Docker Desktop с запущенным Docker Engine для локальной MongoDB либо уже работающая MongoDB.
 
-<p align="center">
-  <a href="https://www.librechat.ai/docs/translation">
-    <img 
-      src="https://img.shields.io/badge/dynamic/json.svg?style=for-the-badge&color=2096F3&label=locize&query=%24.translatedPercentage&url=https://api.locize.app/badgedata/4cb2598b-ed4d-469c-9b04-2ed531a8cb45&suffix=%+translated" 
-      alt="Translation Progress">
-  </a>
-</p>
+Backend и frontend запускаются локально через npm. [docker-compose.yml](docker-compose.yml) запускает MongoDB, админ-панель, Meilisearch и RAG с PostgreSQL/pgvector.
 
-## 🚀 What's New in v0.8.8
+## Первый запуск
 
-- **Agent Management API (beta):** Create, discover, update, and delete Agents; manage Agent files and Skills; and authenticate machine clients through deployment-bound OIDC identities while preserving existing role and Agent access controls. Public OpenAPI and Swagger UI cover inference, events, Agent management, and Skill management.
-- **Attached workspaces (highly experimental):** Select or save a per-Agent default workspace for each managed or personal code worker, then let Agents inspect trees, read and search files, author changes, and run Bash with bounded timeouts. Personal workers support bounded self-service enrollment, readiness status, and per-Agent Git identity.
-- **Background tool controls:** Optionally cancel ordinary background tools, including attached Bash, while keeping detached Subagent execution independent.
-- **Code approval controls:** Choose **Ask**, **Allow**, or **Deny** for file writes and command execution where administrators permit it, including a **Full access** mode for trusted attached environments. File Search and Run Code also honor role grants.
-- **Manual context compaction:** Start a summarize-only turn before the context window fills while preserving recent conversation content according to the deployment's summarization policy.
-- **Context Usage:** Inspect dialogue, retained tool traffic, Agent instructions, cache, cost, and runway pressure without double-counting category subsets.
-- **Unified attachments:** Upload once and let LibreChat route content to the model or extracted text, then provision File Search and Code tools only when needed.
-- **Models:** Added GPT-6 Astra and GPT-6.1 Sol, with Responses API routing and tool-call support.
-- **Agent and chat UI:** Unified tool activity, reasoning, search, and Agent workflows; added one draggable Pinned section for chats and favorites, morphing state icons, high-contrast themes, rich-text message copying, clearer sidebar titles, and refined live phase layouts.
-- **Observability:** Inspect ordered model conversations, tool rounds, and costs in the Trace Viewer; export correlated application logs through OpenTelemetry, configure allowlisted Langfuse trace identity and metadata, tag browser diagnostics with client build IDs, and scope Insights to authorized Agents.
-- **Reliability and security:** Strengthened Agent continuation and checkpoint recovery, Redis liveness detection, DocumentDB coordination, OpenID and MCP OAuth sessions, shared-link throttling, tenant isolation, attachment bounds, and upload error handling.
+Все команды выполняй из корня проекта:
 
-Read the [full v0.8.8 changelog](https://www.librechat.ai/changelog/v0.8.8).
+```powershell
+cd C:\projects\gekadem-ai
+npm ci
+```
 
-# ✨ Features
+### 1. Подготовь Docker-сервисы
 
-- 🖥️ **UI & Experience** inspired by ChatGPT with enhanced design and features
+Сначала настрой `.env` по следующему разделу, затем запусти сервисы:
 
-- 🤖 **AI Model Selection**:  
-  - Anthropic (Claude), AWS Bedrock, OpenAI, Azure OpenAI, Google, Vertex AI, OpenAI Responses API (incl. Azure)
-  - [Custom Endpoints](https://www.librechat.ai/docs/quick_start/custom_endpoints): Use any OpenAI-compatible API with LibreChat, no proxy required
-  - Compatible with [Local & Remote AI Providers](https://www.librechat.ai/docs/configuration/librechat_yaml/ai_endpoints):
-    - Ollama, [AMD Lemonade](https://lemonade-server.ai/), groq, Cohere, Mistral AI, Apple MLX, koboldcpp, together.ai,
-    - OpenRouter, Helicone, Perplexity, ShuttleAI, Deepseek, Qwen, and more
+```powershell
+docker compose up -d --wait
+```
 
-- 🔧 **[Code Interpreter API](https://www.librechat.ai/docs/features/code_interpreter)**: 
-  - Secure, Sandboxed Execution in Python, Node.js (JS/TS), Go, C/C++, Java, PHP, Rust, and Fortran
-  - Seamless File Handling: Upload, process, and download files directly
-  - No Privacy Concerns: Fully isolated and secure execution
-  - Open-Source & Self-Hostable: powered by [ClickHouse/code-interpreter](https://github.com/ClickHouse/code-interpreter)
+Данные сохраняются в каталоге `data-node` внутри проекта, как и в прежнем Compose. Команда ждёт готовности MongoDB; её можно использовать и при следующих запусках. База доступна с компьютера по адресу `127.0.0.1:27017`.
 
-- 🔦 **Agents & Tools Integration**:  
-  - **[LibreChat Agents](https://www.librechat.ai/docs/features/agents)**:
-    - No-Code Custom Assistants: Build specialized, AI-driven helpers
-    - Agent Marketplace: Discover and deploy community-built agents
-    - Collaborative Sharing: Share agents with specific users and groups
-    - Flexible & Extensible: Use MCP Servers, tools, file search, code execution, and more
-    - [Skills](https://www.librechat.ai/docs/features/skills): Create reusable `SKILL.md` instruction bundles for manual, automatic, or always-on agent workflows
-    - [Agent Plugins](https://www.librechat.ai/docs/features/agent_plugins): Experimentally bundle deployment Skills and MCP servers into startup-loaded packages
-    - [Subagents](https://www.librechat.ai/docs/features/subagents): Delegate focused work to isolated child agent runs with their own context windows
-    - Agent Management API: Automate Agent, file, and Skill management with deployment-bound OIDC clients
-    - Attached Code Workspaces: Let Agents inspect, search, edit, and run commands in managed or personal workspaces (highly experimental)
-    - Compatible with Custom Endpoints, OpenAI, Azure, Anthropic, AWS Bedrock, Google, Vertex AI, Responses API, and more
-    - [Model Context Protocol (MCP) Support](https://modelcontextprotocol.io/clients#librechat) for Tools
+Если ранее запускал отдельный контейнер `gekadem-mongo` по старой инструкции, останови его командой `docker stop gekadem-mongo`, чтобы освободить порт. Его данные остаются в отдельном volume `gekadem-mongo-data` и автоматически в `data-node` не переносятся. Если нужны именно эти данные, запускай прежний контейнер, а остальные сервисы поднимай командой `docker compose up -d --wait admin-panel meilisearch rag_api`.
 
-- 🔍 **Web Search**:  
-  - Search the internet and retrieve relevant information to enhance your AI context
-  - Combines search providers, content scrapers, and result rerankers for optimal results
-  - **Customizable Jina Reranking**: Configure custom Jina API URLs for reranking services
-  - **[Learn More →](https://www.librechat.ai/docs/features/web_search)**
+### 2. Настрой .env
 
-- 🪄 **Generative UI with Code Artifacts**:  
-  - [Code Artifacts](https://youtu.be/GfTj7O4gmd0?si=WJbdnemZpJzBrJo3) create React, HTML, and Mermaid content directly in chat
-  - Open previews fullscreen and export Mermaid diagrams as SVG or PNG
+Если `.env` отсутствует, создай его из примера. Существующий файл не перезаписывай:
 
-- 🎨 **Image Generation & Editing**
-  - Text-to-image and image-to-image with [GPT-Image-1](https://www.librechat.ai/docs/features/image_gen#1--openai-image-tools-recommended)
-  - Text-to-image with [Stable Diffusion](https://www.librechat.ai/docs/features/image_gen#3--stable-diffusion-local), [Flux](https://www.librechat.ai/docs/features/image_gen#4--flux), or any [MCP server](https://www.librechat.ai/docs/features/image_gen#5--model-context-protocol-mcp)
-  - Produce stunning visuals from prompts or refine existing images with a single instruction
+```powershell
+if (!(Test-Path .env)) { Copy-Item .env.example .env }
+```
 
-- 💾 **Presets & Context Management**:  
-  - Create, Save, & Share Custom Presets  
-  - Switch between AI Endpoints and Presets mid-chat
-  - Edit, Resubmit, and Continue Messages with Conversation branching  
-  - Create and share prompts with specific users and groups
-  - [Fork Messages & Conversations](https://www.librechat.ai/docs/features/fork) for Advanced Context control
-  - Compact long conversations on demand while preserving recent context
+Проверь следующие значения в `.env`:
 
-- 💬 **Multimodal & File Interactions**:  
-  - Upload and analyze images with Claude 3, GPT-4.5, GPT-4o, o1, Llama-Vision, and Gemini 📸  
-  - Chat with Files using Custom Endpoints, OpenAI, Azure, Anthropic, AWS Bedrock, & Google 🗃️
-  - Copy messages as formatted rich text for documents, email, and collaboration apps
+```dotenv
+HOST=0.0.0.0
+PORT=3080
+MONGO_URI=mongodb://127.0.0.1:27017/LibreChat
+DOMAIN_CLIENT=http://localhost:3090
+DOMAIN_SERVER=http://localhost:3080
+SEARCH=true
+MEILI_HOST=http://127.0.0.1:7700
+RAG_PORT=8000
+RAG_API_URL=http://127.0.0.1:8000
+ADMIN_PANEL_URL=http://localhost:3000
+ALLOW_REGISTRATION=true
+```
 
-- 🌎 **Multilingual UI**:
-  - English, 中文 (简体), 中文 (繁體), العربية, Deutsch, Español, Français, Italiano
-  - Polski, Português (PT), Português (BR), Русский, 日本語, Svenska, 한국어, Tiếng Việt
-  - Türkçe, Nederlands, עברית, Català, Čeština, Dansk, Eesti, فارسی
-  - Suomi, Magyar, Հայերեն, Bahasa Indonesia, ქართული, Latviešu, ไทย, ئۇيغۇرچە
+Если используешь другую MongoDB, укажи её адрес в `MONGO_URI`. `HOST=0.0.0.0` позволяет админ-панели в Docker обращаться к локальному backend через `host.docker.internal`. Redis не требуется, пока не включены зависящие от него возможности.
 
-- 🧠 **Reasoning UI**:  
-  - Dynamic Reasoning UI for Chain-of-Thought/Reasoning AI models like DeepSeek-R1
+Заполни `ADMIN_PANEL_SESSION_SECRET` (не менее 32 символов) и `MEILI_MASTER_KEY` одинаковым ключом для backend и контейнера Meilisearch. Можно сгенерировать отдельные значения командой и перенести результат в `.env`:
 
-- 🎨 **Customizable Interface**:  
-  - Customizable Dropdown & Interface that adapts to both power users and newcomers
-  - Light, dark, system, and high-contrast appearance modes
+```powershell
+node -e "const c=require('crypto'); for(const k of ['ADMIN_PANEL_SESSION_SECRET','MEILI_MASTER_KEY']) console.log(k+'='+c.randomBytes(32).toString('hex'))"
+```
 
-- 📈 **Observability**:
-  - Export traces and logs with OpenTelemetry and connect Langfuse for Agent and model insights
+Админ-панель открывается на **http://localhost:3000** после запуска backend; для входа нужен пользователь с ролью администратора. RAG доступен backend по `http://127.0.0.1:8000`; для обработки документов настрой провайдер embeddings и его ключ в `.env` (например, `EMBEDDINGS_PROVIDER`, `EMBEDDINGS_MODEL`, `RAG_OPENAI_API_KEY`). PostgreSQL доступен RAG внутри Docker, данные сохраняются в volume `pgdata2`. Поиск хранит данные в `meili_data_v1.35.1`.
 
-- 🌊 **[Resumable Streams](https://www.librechat.ai/docs/features/resumable_streams)**:  
-  - Never lose a response: AI responses automatically reconnect and resume if your connection drops
-  - Multi-Tab & Multi-Device Sync: Open the same chat in multiple tabs or pick up on another device
-  - Production-Ready: Works from single-server setups to horizontally scaled deployments with Redis
+Если `JWT_SECRET`, `JWT_REFRESH_SECRET`, `CREDS_KEY` и `CREDS_IV` ещё не заполнены, сгенерируй значения:
 
-- 🗣️ **Speech & Audio**:  
-  - Chat hands-free with Speech-to-Text and Text-to-Speech  
-  - Automatically send and play Audio  
-  - Supports OpenAI, Azure OpenAI, and Elevenlabs
+```powershell
+node -e "const c=require('crypto'); for(const k of ['JWT_SECRET','JWT_REFRESH_SECRET','CREDS_KEY','CREDS_IV']) console.log(k+'='+c.randomBytes(k==='CREDS_IV'?16:32).toString('hex'))"
+```
 
-- 📥 **Import & Export Conversations**:  
-  - Import Conversations from LibreChat, ChatGPT, Chatbot UI  
-  - Export conversations as screenshots, markdown, text, json
+Перенеси результат в соответствующие поля `.env`. Уже настроенные значения сохрани: от них зависят сессии и расшифровка сохранённых учётных данных.
 
-- 🔍 **Search & Discovery**:  
-  - Search all messages/conversations
+Модели и провайдеры настрой в `.env` и [librechat.yaml](librechat.yaml). Для получения ответов от модели нужны рабочие настройки выбранного провайдера. Дополнительные интеграции могут требовать своих сервисов.
 
-- 👥 **Multi-User & Secure Access**:
-  - Multi-User, Secure Authentication with OAuth2, LDAP, & Email Login Support
-  - Built-in Moderation, and Token spend tools
+Не коммить `.env` и секреты провайдеров.
 
-- 🎛️ **[Admin Panel](https://www.librechat.ai/docs/features/admin_panel)**:
-  - Browser-based UI to manage users, groups, roles, and configuration overrides
-  - Edit settings and per-role/group permissions live, without redeploying
-  - Bundled with the Docker Compose stacks for one-command setup
+### 3. Собери проект
 
-- ⚙️ **Configuration & Deployment**:  
-  - Configure Proxy, Reverse Proxy, Docker, & many Deployment options  
-  - Use [S3 with CloudFront](https://www.librechat.ai/docs/configuration/cdn/cloudfront) for stable media links, edge delivery, signed cookies, and secured downloads
-  - Use completely local or deploy on the cloud
+```powershell
+npm run frontend
+```
 
-- 📖 **Open-Source & Community**:  
-  - Completely Open-Source & Built in Public  
-  - Community-driven development, support, and feedback
+Команда собирает общие пакеты и frontend. Первая сборка нужна даже для режима разработки: backend читает `client/dist/index.html` при запуске.
 
-[For a thorough review of our features, see our docs here](https://docs.librechat.ai/) 📚
+### 4. Запусти backend
 
-## 🪶 All-In-One AI Conversations with LibreChat
+В первом терминале:
 
-LibreChat is a self-hosted AI chat platform that unifies all major AI providers in a single, privacy-focused interface.
+```powershell
+npm run backend:dev
+```
 
-Beyond chat, LibreChat provides AI Agents, Model Context Protocol (MCP) support, Artifacts, Code Interpreter, custom actions, conversation search, and enterprise-ready multi-user authentication.
+Дождись запуска сервера на `http://localhost:3080`.
 
-Open source, actively developed, and built for anyone who values control over their AI infrastructure.
+### 5. Запусти frontend
 
----
+Во втором терминале, тоже из корня проекта:
 
-## 🌐 Resources
+```powershell
+npm run frontend:dev
+```
 
-**GitHub Repo:**
-  - **RAG API:** [github.com/LibreChat-AI/rag-api](https://github.com/LibreChat-AI/rag-api)
-  - **Website:** [github.com/LibreChat-AI/librechat.ai](https://github.com/LibreChat-AI/librechat.ai)
+Открой **http://localhost:3090** и зарегистрируй локальный аккаунт.
 
-**Other:**
-  - **Website:** [librechat.ai](https://librechat.ai)
-  - **Documentation:** [librechat.ai/docs](https://librechat.ai/docs)
-  - **Blog:** [librechat.ai/blog](https://librechat.ai/blog)
+Это адрес Vite для разработки. Он автоматически обновляет интерфейс после изменений и перенаправляет `/api` и `/oauth` на backend на порту `3080`. Если порт `3090` занят, смотри фактический адрес в выводе Vite.
 
----
+## Ежедневный запуск
 
-## 📝 Changelog
+Запусти Docker Desktop, затем сервисы:
 
-Keep up with the latest updates by visiting the releases page and notes:
-- [Releases](https://github.com/LibreChat-AI/LibreChat/releases)
-- [Changelog](https://www.librechat.ai/changelog) 
+```powershell
+docker compose up -d --wait
+```
 
-**⚠️ Please consult the [changelog](https://www.librechat.ai/changelog) for breaking changes before updating.**
+В двух отдельных терминалах:
 
----
+```powershell
+npm run backend:dev
+```
 
-## ⭐ Star History
+```powershell
+npm run frontend:dev
+```
 
-<p align="center">
-  <a href="https://www.star-history.com/?type=date&repos=danny-avila%2FLibreChat">
-    <picture>
-      <source media="(prefers-color-scheme: dark)" srcset="https://api.star-history.com/chart?repos=danny-avila/LibreChat&type=date&theme=dark&legend=top-left&sealed_token=CXsk3L39t1nlibOv3pQloYwrz8R_yXxCAe1X3DG8sEnmu3PZvzSRZGf7JvisknF83yXqMwR6IcuKLolIQBulChAOseTYP1TDglfT6clOHXzspF-DJhmmsnGasrGpLfCeOEU56Bx761CJp9xDxza5rbyXW3F1GqWNtDf9pMroBq86vS70ilRWu16VyucF" />
-      <source media="(prefers-color-scheme: light)" srcset="https://api.star-history.com/chart?repos=danny-avila/LibreChat&type=date&legend=top-left&sealed_token=CXsk3L39t1nlibOv3pQloYwrz8R_yXxCAe1X3DG8sEnmu3PZvzSRZGf7JvisknF83yXqMwR6IcuKLolIQBulChAOseTYP1TDglfT6clOHXzspF-DJhmmsnGasrGpLfCeOEU56Bx761CJp9xDxza5rbyXW3F1GqWNtDf9pMroBq86vS70ilRWu16VyucF" />
-      <img alt="Star History Chart" src="https://api.star-history.com/chart?repos=danny-avila/LibreChat&type=date&legend=top-left&sealed_token=CXsk3L39t1nlibOv3pQloYwrz8R_yXxCAe1X3DG8sEnmu3PZvzSRZGf7JvisknF83yXqMwR6IcuKLolIQBulChAOseTYP1TDglfT6clOHXzspF-DJhmmsnGasrGpLfCeOEU56Bx761CJp9xDxza5rbyXW3F1GqWNtDf9pMroBq86vS70ilRWu16VyucF" />
-    </picture>
-  </a>
-</p>
+Открывай **http://localhost:3090**, админ-панель — **http://localhost:3000**. Для остановки npm-процессов нажми `Ctrl+C` в каждом терминале. Docker-сервисы останови командой:
 
-<p align="center">
-  <a href="https://trendshift.io/repositories/4685" target="_blank" style="padding: 10px;">
-    <img src="https://trendshift.io/api/badge/repositories/4685" alt="LibreChat-AI%2FLibreChat | Trendshift" style="width: 250px; height: 55px;" width="250" height="55"/>
-  </a>
-  <a href="https://runacap.com/ross-index/q1-24/" target="_blank" rel="noopener" style="margin-left: 20px;">
-    <img style="width: 260px; height: 56px" src="https://runacap.com/wp-content/uploads/2024/04/ROSS_badge_white_Q1_2024.svg" alt="ROSS Index - Fastest Growing Open-Source Startups in Q1 2024 | Runa Capital" width="260" height="56"/>
-  </a>
-</p>
+```powershell
+docker compose down
+```
 
----
+Данные MongoDB, Meilisearch и PostgreSQL при обычном `docker compose down` сохраняются. Не добавляй `-v`, если нужно сохранить volume PostgreSQL.
 
-## ✨ Contributions
+## Где менять интерфейс
 
-Contributions, suggestions, bug reports and fixes are welcome!
+| Путь | Что находится |
+| --- | --- |
+| `client/src` | Приложение: страницы, компоненты, навигация |
+| `client/public/assets` | Статические изображения и другие ресурсы |
+| `packages/client` | Общие UI-компоненты и темы |
+| `packages/chat` | Общие компоненты, состояние и транспорт чата |
+| `client/src/locales/en/translation.json` | Английские ключи локализации для нового текста |
+| `librechat.yaml` | Настройки приложения и провайдеров |
 
-For new features, components, or extensions, please open an issue and discuss before sending a PR.
+Правки в `client/src` подхватывает Vite. При изменениях в общих пакетах запускай соответствующую сборку в режиме наблюдения в дополнительном терминале:
 
-If you'd like to help translate LibreChat into your language, we'd love your contribution! Improving our translations not only makes LibreChat more accessible to users around the world but also enhances the overall user experience. Please check out our [Translation Guide](https://www.librechat.ai/docs/translation).
+```powershell
+npm run build:watch --workspace packages/client
+```
 
----
+```powershell
+npm run build:watch --workspace packages/chat
+```
 
-## 💖 This project exists in its current state thanks to all the people who contribute
+После изменения `.env` или `librechat.yaml` перезапусти backend. После обновления зависимостей или исходников общих пакетов выполни `npm ci` и `npm run frontend` заново.
 
-<a href="https://github.com/LibreChat-AI/LibreChat/graphs/contributors">
-  <img src="https://contrib.rocks/image?repo=LibreChat-AI/LibreChat" />
-</a>
+## Если запуск не получается
 
----
+- Ошибка подключения к MongoDB: проверь, что контейнер запущен, а `MONGO_URI` указывает на доступную базу.
+- Не найден `client/dist/index.html` или сборки общих пакетов: выполни `npm run frontend`.
+- Ошибки API в браузере: проверь, что backend работает на `3080`, и посмотри его терминал.
+- Интерфейс открывается, но модель не отвечает: проверь ключи, адрес и имя модели в конфигурации провайдера.
+- Не меняется интерфейс после правки: открой адрес Vite на `3090`; для изменений в `packages/client` или `packages/chat` включи сборку соответствующего пакета.
 
-## 🎉 Special Thanks
+## Исходный проект
 
-We thank [Locize](https://locize.com) for their translation management tools that support multiple languages in LibreChat.
-
-<p align="center">
-  <a href="https://locize.com" target="_blank" rel="noopener noreferrer">
-    <img src="https://github.com/user-attachments/assets/d6b70894-6064-475e-bb65-92a9e23e0077" alt="Locize Logo" height="50">
-  </a>
-</p>
+Основано на LibreChat. Условия использования и исходные уведомления об авторских правах сохранены в [LICENSE](LICENSE).
